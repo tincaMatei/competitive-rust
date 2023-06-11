@@ -2,3 +2,4 @@
 //! so it can be easily copy pasted into your solution without having huge code blocks.
 
 pub mod inparser;
+pub mod outparser;
