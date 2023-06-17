@@ -5,4 +5,5 @@
 
 pub mod io;
 pub mod undoc;
+pub mod graph;
 

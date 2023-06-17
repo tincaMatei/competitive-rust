@@ -9,3 +9,4 @@ pub mod inparser;
 pub mod outparser;
 pub mod main;
 pub mod profiler;
+pub mod adj_list;
