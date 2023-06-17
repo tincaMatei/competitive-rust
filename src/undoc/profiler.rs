@@ -6,10 +6,7 @@
 //! Requires the [pprof] crate. Since in Competitive Programming, you cannot download
 //! additional crates, don't forget to comment it out.
 
-fn computation() {
-
-}
-
+#[allow(dead_code)]
 fn main() {
     let guard = pprof::ProfilerGuardBuilder::default()
         .frequency(100)
@@ -17,7 +14,7 @@ fn main() {
         .build()
         .unwrap();
 
-    computation();
+    // Do the computation that you want to measure here.
 
     if let Ok(report) = guard.report().build() {
         let file = std::fs::File::create("flamegraph.svg").unwrap();

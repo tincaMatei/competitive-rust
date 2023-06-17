@@ -1,3 +1,4 @@
+#![allow(unused_variables)] // You might want to remove this
 #![allow(dead_code)]
 
 use std::io::{Read, BufRead, Stdin, BufReader};
