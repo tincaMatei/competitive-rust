@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::io::{Write, BufWriter, Stdout};
 use std::fs::File;
 

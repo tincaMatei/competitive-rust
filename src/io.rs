@@ -44,7 +44,8 @@ use std::fmt::Debug;
 pub struct InParser<T: Read> {
     reader: BufReader<T>,
     buffer: Vec<u8>,
-    cursor: usize
+    cursor: usize,
+    eof_flag: bool,
 }
 
 impl InParser<Stdin> {
@@ -75,16 +76,17 @@ impl<T: Read> InParser<T> {
             reader,
             buffer,
             cursor: 0,
+            eof_flag: false,
         }
     }
 
     /// Returns the byte at the current position of the cursor or [None] if the
     /// entire input has been consumed.
-    pub fn get_current_byte(&mut self) -> Option<u8> {
+    pub fn get_current_byte(&mut self) -> u8 {
         if self.cursor < self.buffer.len() {
-            return Some(self.buffer[self.cursor]); 
+            return self.buffer[self.cursor]; 
         }
-        return None
+        panic!("Outside of buffer")
     }
 
     /// Advance the cursor to the next position.
@@ -96,51 +98,80 @@ impl<T: Read> InParser<T> {
                 .expect("Failed to fill buffer")
                 .to_vec();
 
+            self.eof_flag = self.buffer.is_empty();
             self.cursor = 0;
         }
     }
 
     fn skip_spaces(&mut self) {
-        while self.get_current_byte() == Some(b' ') ||
-              self.get_current_byte() == Some(b'\n') {
+        while !self.eof_flag && 
+            (self.get_current_byte() == b' ' ||
+             self.get_current_byte() == b'\n') {
             
             self.advance_cursor();
         }
     }
 
-    fn get_token(&mut self) -> Option<String> {
+    fn get_token(&mut self) -> Vec<u8> {
         let mut token_buf: Vec<u8> = Vec::new();
 
         self.skip_spaces();
 
-        while self.get_current_byte() != None &&
-            self.get_current_byte() != Some(b' ') &&
-            self.get_current_byte() != Some(b'\n') {
+        while !self.eof_flag &&
+            self.get_current_byte() != b' ' &&
+            self.get_current_byte() != b'\n' {
             
-            let byte = self.get_current_byte().unwrap();
+            let byte = self.get_current_byte();
             token_buf.push(byte);
 
             self.advance_cursor();
         }
 
-        let strval = std::str::from_utf8(&token_buf)
+        token_buf
+    }
+   
+    /// Read a string from the input.
+    pub fn read_string(&mut self) -> String {
+        let token = self.get_token();
+        
+        let strval = std::str::from_utf8(&token)
             .expect("Failed to convert into valid utf8")
             .trim();
-        
-        if strval.is_empty() {
-            return None;
-        } else {
-            Some(strval.to_string())
-        }
+
+        strval.to_string()
     }
     
-    /// Read the next element from the input.
-    pub fn read<F: FromStr>(&mut self) -> F
-    where <F as FromStr>::Err: Debug{
-        let token = self.get_token()
-            .expect("Tried to read from empty token");
+    /// Read an integer number from the input.
+    pub fn read_number<F: From<i64>>(&mut self) -> F {
+        self.skip_spaces();
 
-        token.parse::<F>()
+        let sgn = if self.get_current_byte() == b'-' {
+            self.advance_cursor();
+            -1
+        } else {
+            1
+        };
+        let mut nr = 0;
+
+        while !self.eof_flag && self.get_current_byte().is_ascii_digit() {
+            nr = nr * 10 + (self.get_current_byte() - b'0') as i64;
+            self.advance_cursor();
+        }
+
+        F::from(nr * sgn)
+    }
+
+    /// Read an element from the input that can be parsed. 
+    ///
+    /// It is preferred to use
+    /// [read_number] instead of this function, because the latter is optimized.
+    ///
+    /// When reading a string, use [read_string] instead, because there is no parsing
+    /// needed to convert to the required type.
+    pub fn read<F>(&mut self) -> F
+    where F: FromStr,
+          <F as FromStr>::Err: Debug {
+        self.read_string().parse::<F>()
             .unwrap()
     }
 }
@@ -254,6 +285,17 @@ mod tests {
         assert_eq!(reader.read::<i32>(), 1);
         assert_eq!(reader.read::<String>(), "asdf");
         assert_eq!(reader.read::<i32>(), 2);
+    }
+
+    #[test]
+    fn read_negative() {
+        use std::io::{Cursor, BufReader};
+
+        let reader = Cursor::new(b" -1    -2   ");
+        let mut reader = InParser::new(BufReader::new(reader));
+
+        assert_eq!(reader.read::<i32>(), -1);
+        assert_eq!(reader.read::<i32>(), -2);
     }
 
     #[test]
