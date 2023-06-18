@@ -21,7 +21,7 @@ where T: 'a + Copy {
     }
 }
 
-struct AdjListGraph {
+pub struct AdjListGraph {
     pub v: usize,
     pub adj: Vec<Vec<usize>>,
 }
@@ -40,14 +40,14 @@ impl<'a> Graph<'a, usize> for AdjListGraph {
 }
 
 impl AdjListGraph {
-    fn empty(v: usize) -> AdjListGraph {
+    pub fn empty(v: usize) -> AdjListGraph {
         AdjListGraph {
             v,
             adj: vec![vec![]; v],
         }
     } 
-
-    fn from_edges(v: usize, edges: &[(usize, usize)]) -> AdjListGraph {
+    
+    pub fn from_edges(v: usize, edges: &[(usize, usize)]) -> AdjListGraph {
         let mut g = AdjListGraph::empty(v);
 
         for edge in edges {
@@ -57,7 +57,7 @@ impl AdjListGraph {
         g
     } 
 
-    fn from_undirected_edges(v: usize, edges: &[(usize, usize)]) -> AdjListGraph {
+    pub fn from_undirected_edges(v: usize, edges: &[(usize, usize)]) -> AdjListGraph {
         let mut g = AdjListGraph::empty(v);
 
         for edge in edges {
@@ -67,16 +67,16 @@ impl AdjListGraph {
         g
     } 
 
-    fn push_edge(&mut self, a: usize, b: usize) {
+    pub fn push_edge(&mut self, a: usize, b: usize) {
         self.adj[a].push(b);
     }
 
-    fn push_undirected_edge(&mut self, a: usize, b: usize) {
+    pub fn push_undirected_edge(&mut self, a: usize, b: usize) {
         self.push_edge(a, b);
         self.push_edge(b, a);
     }
 
-    fn is_undirected(&self) -> bool {
+    pub fn is_undirected(&self) -> bool {
         use std::collections::HashMap;
 
         let mut hashmap = HashMap::<(usize, usize), usize>::new();

@@ -1,7 +1,52 @@
-#![allow(dead_code)]
+//! A collection of graph utilities and algorithms.
+//!
+//! Usually, you would need to create a list that uses adjacency lists. 
+//! You can either to it immutably, by passing the edges used
+//! or mutably, by pushing the edges yourself.
+//!
+//! ```
+//! # use competitive_rust::graph::{AdjListGraph, Graph};
+//! #
+//! let edges = vec![(0, 1), (0, 2), (1, 2)];
+//! let graph = AdjListGraph::from_undirected_edges(3, &edges);
+//!
+//! for node in graph.neighbours(0) {
+//!     println!("Edge: {} -> {}", 0, node);
+//! }
+//!
+//! assert_eq!(graph.neighbours(1).map(|e| *e).collect::<Vec<usize>>(), vec![0, 2]);
+//! ```
 
-use crate::graph::Graph;
 use std::slice::Iter;
+
+/// A trait for representing graphs, regardless of whether they're directed or undirected.
+pub trait Graph<'a, T>
+where T: 'a + Copy {
+    /// Returns the number of nodes in the graph.
+    fn v(&self) -> usize;
+
+    /// Returns the number of edges in the graph.
+    fn e(&self) -> usize;
+    
+    /// Returns the neighbours of a node as an iterator.
+    fn neighbours(&'a self, node: T) -> Iter<'a, T>;
+
+    /// Returns the set of nodes.
+    fn nodes(&self) -> Vec<T>;
+
+    /// Returns the set of edges;
+    fn edges(&'a self) -> Vec<(T, T)> {
+        let mut edges = Vec::<(T, T)>::new();
+
+        for node in self.nodes() {
+            for neigh in self.neighbours(node) {
+                edges.push((node, *neigh));
+            }
+        }
+
+        edges
+    }
+}
 
 /// Generic implementation for graphs.
 ///
@@ -12,7 +57,7 @@ use std::slice::Iter;
 /// is not actually an undirected graph.
 ///
 /// The nodes are numbered from 0 to V - 1.
-struct AdjListGraph {
+pub struct AdjListGraph {
     pub v: usize,
     pub adj: Vec<Vec<usize>>,
 }
@@ -32,7 +77,7 @@ impl<'a> Graph<'a, usize> for AdjListGraph {
 
 impl AdjListGraph {
     /// Construct a graph with `v` nodes and no edges.
-    fn empty(v: usize) -> AdjListGraph {
+    pub fn empty(v: usize) -> AdjListGraph {
         AdjListGraph {
             v,
             adj: vec![vec![]; v],
@@ -40,7 +85,7 @@ impl AdjListGraph {
     } 
 
     /// Construct a graph with `v` nodes and the given edges.
-    fn from_edges(v: usize, edges: &[(usize, usize)]) -> AdjListGraph {
+    pub fn from_edges(v: usize, edges: &[(usize, usize)]) -> AdjListGraph {
         let mut g = AdjListGraph::empty(v);
 
         for edge in edges {
@@ -51,7 +96,7 @@ impl AdjListGraph {
     } 
 
     /// Construct a graph with `v` nodes and the given undirected edges.
-    fn from_undirected_edges(v: usize, edges: &[(usize, usize)]) -> AdjListGraph {
+    pub fn from_undirected_edges(v: usize, edges: &[(usize, usize)]) -> AdjListGraph {
         let mut g = AdjListGraph::empty(v);
 
         for edge in edges {
@@ -62,12 +107,12 @@ impl AdjListGraph {
     } 
 
     /// Push a directed edge in the graph.
-    fn push_edge(&mut self, a: usize, b: usize) {
+    pub fn push_edge(&mut self, a: usize, b: usize) {
         self.adj[a].push(b);
     }
 
     /// Push an undirected edge in the graph.
-    fn push_undirected_edge(&mut self, a: usize, b: usize) {
+    pub fn push_undirected_edge(&mut self, a: usize, b: usize) {
         self.push_edge(a, b);
         self.push_edge(b, a);
     }
@@ -76,7 +121,7 @@ impl AdjListGraph {
     ///
     /// If you need to assert that a given graph is undirected, don't use
     /// [assert], use [debug_assert] instead.
-    fn is_undirected(&self) -> bool {
+    pub fn is_undirected(&self) -> bool {
         use std::collections::HashMap;
 
         let mut hashmap = HashMap::<(usize, usize), usize>::new();
@@ -158,4 +203,5 @@ mod tests {
         assert_eq!(g.nodes(), vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 }
+
 

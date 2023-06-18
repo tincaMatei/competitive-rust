@@ -27,7 +27,7 @@ use std::fmt::Debug;
 ///
 /// ```no_run
 /// # use competitive_rust::io::InParser;
-///
+/// #
 /// // stdin:
 /// //       1      2   asdf
 ///
@@ -164,9 +164,9 @@ impl<T: Read> InParser<T> {
     /// Read an element from the input that can be parsed. 
     ///
     /// It is preferred to use
-    /// [read_number] instead of this function, because the latter is optimized.
+    /// [InParser::read_number] instead of this function, because the latter is optimized.
     ///
-    /// When reading a string, use [read_string] instead, because there is no parsing
+    /// When reading a string, use [InParser::read_string] instead, because there is no parsing
     /// needed to convert to the required type.
     pub fn read<F>(&mut self) -> F
     where F: FromStr,
@@ -180,7 +180,7 @@ impl<T: Read> InParser<T> {
 /// 
 /// ```no_run
 /// # use competitive_rust::io::OutParser;
-///
+/// #
 /// let mut writer = OutParser::from_stdout();
 ///
 /// let x: i32 = 2;
