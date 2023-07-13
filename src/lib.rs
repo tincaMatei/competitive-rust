@@ -4,6 +4,5 @@
 //! copy-pasted into your code without any documentation comment.
 
 pub mod io;
-pub mod undoc;
 pub mod graph;
 
