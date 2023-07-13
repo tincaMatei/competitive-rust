@@ -1,0 +1,14 @@
+[package]
+name = "dopecomp_io"
+version = "0.1.0"
+edition = "2021"
+authors = ["Matei Tinca <tinca.matei02@gmail.com>"]
+
+keywords = ["competitive", "algorithms"]
+readme = "../README.md"
+license-file = "../LICENSE"
+repository = "https://github.com/tincaMatei/competitive-rust"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
