@@ -2,7 +2,7 @@
 //!
 //! ```
 //! use std::io::{Cursor, BufReader};
-//! # use competitive_rust::io::InParser;
+//! # use dopecomp_io::InParser;
 //!
 //! let reader = Cursor::new(b"1 2 asdf");
 //! let mut reader = InParser::new(BufReader::new(reader));
@@ -26,7 +26,7 @@ use std::fmt::Debug;
 /// Parser used for reading from stdin, files, or any other source.
 ///
 /// ```no_run
-/// # use competitive_rust::io::InParser;
+/// # use dopecomp_io::InParser;
 /// #
 /// // stdin:
 /// //       1      2   asdf
@@ -179,7 +179,7 @@ impl<T: Read> InParser<T> {
 /// Writer used for writing in stdout, a file, or any other place.
 /// 
 /// ```no_run
-/// # use competitive_rust::io::OutParser;
+/// # use dopecomp_io::OutParser;
 /// #
 /// let mut writer = OutParser::from_stdout();
 ///
@@ -346,5 +346,6 @@ mod tests {
         assert_eq!(&mut bytes, b"3.1415926536");
     }
 }
+
 
 
