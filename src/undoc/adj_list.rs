@@ -1,99 +1,116 @@
 #![allow(dead_code)]
 
-use std::slice::Iter;
+pub trait Edge {
+    fn to(&self, from: usize) -> usize;
+}
 
-pub trait Graph<'a, T>
-where T: 'a + Copy {
-    fn v(&self) -> usize;
-    fn e(&self) -> usize;
-    fn neighbours(&'a self, node: T) -> Iter<'a, T>;
-    fn nodes(&self) -> Vec<T>;
-    fn edges(&'a self) -> Vec<(T, T)> {
-        let mut edges = Vec::<(T, T)>::new();
+pub trait BidirectionalEdge: Edge {
+    fn as_pair(&self) -> (usize, usize);
+}
 
-        for node in self.nodes() {
-            for neigh in self.neighbours(node) {
-                edges.push((node, *neigh));
+#[derive(Debug)]
+pub struct Graph<V, E>
+where V: Default,
+      E: Edge {
+    pub nodes: Vec<V>,
+    pub edges: Vec<E>,
+    pub adj_list: Vec<Vec<usize>>,
+    pub undirected: bool,
+}
+
+impl<V, E> Graph<V, E> 
+where V: Default,
+      E: Edge {
+    
+    pub fn from_edges<T, F>(
+        v: usize, 
+        edges: Vec<T>, 
+        transf: F,
+        undirected: bool
+    ) -> Graph<V, E>
+    where T: BidirectionalEdge,
+          F: Fn(T) -> E {
+        let mut nodes = Vec::with_capacity(v);
+        for _ in 0..v {
+            nodes.push(V::default());
+        }
+
+        let mut capacity = vec![0; v];
+        for e in &edges {
+            let (a, b) = e.as_pair();
+            capacity[a] += 1;
+            if undirected {
+                capacity[b] += 1;
             }
         }
 
-        edges
-    }
-}
-
-pub struct AdjListGraph {
-    pub v: usize,
-    pub adj: Vec<Vec<usize>>,
-}
-
-impl<'a> Graph<'a, usize> for AdjListGraph {
-    fn v(&self) -> usize { self.adj.len() }
-    fn e(&self) -> usize { self.adj.iter().fold(0, |ac, e| { ac + e.len() } ) }
-    
-    fn nodes(&self) -> Vec<usize> {
-        (0..self.v()).collect()
-    }
-
-    fn neighbours(&'a self, node: usize) -> Iter<'a, usize> {
-        self.adj[node].iter()
-    }
-}
-
-impl AdjListGraph {
-    pub fn empty(v: usize) -> AdjListGraph {
-        AdjListGraph {
-            v,
-            adj: vec![vec![]; v],
-        }
-    } 
-    
-    pub fn from_edges(v: usize, edges: &[(usize, usize)]) -> AdjListGraph {
-        let mut g = AdjListGraph::empty(v);
-
-        for edge in edges {
-            g.push_edge(edge.0, edge.1);
+        let mut adj_list: Vec<Vec<usize>> = Vec::with_capacity(v);
+        for i in 0..v {
+            adj_list.push(Vec::with_capacity(capacity[i]));
         }
 
-        g
-    } 
+        for id in 0..edges.len() {
+            let edge = &edges[id];
+            let (a, b) = edge.as_pair();
+            adj_list[a].push(id);
 
-    pub fn from_undirected_edges(v: usize, edges: &[(usize, usize)]) -> AdjListGraph {
-        let mut g = AdjListGraph::empty(v);
-
-        for edge in edges {
-            g.push_undirected_edge(edge.0, edge.1);
+            if undirected {
+                adj_list[b].push(id);
+            }
         }
-
-        g
-    } 
-
-    pub fn push_edge(&mut self, a: usize, b: usize) {
-        self.adj[a].push(b);
-    }
-
-    pub fn push_undirected_edge(&mut self, a: usize, b: usize) {
-        self.push_edge(a, b);
-        self.push_edge(b, a);
-    }
-
-    pub fn is_undirected(&self) -> bool {
-        use std::collections::HashMap;
-
-        let mut hashmap = HashMap::<(usize, usize), usize>::new();
         
-        for edge in self.edges() {
-            let entry = *hashmap.entry(edge)
-                .or_insert(0);
-            hashmap.insert(edge, entry + 1);
-        }
+        let edges: Vec<E> = edges.into_iter().map(transf).collect();
 
-        for edge in self.edges() {
-            if hashmap.get(&edge) != hashmap.get(&(edge.1, edge.0)) {
-                return false;
-            }
+        Graph::<V, E> {
+            nodes,
+            edges,
+            adj_list,
+            undirected
         }
+    }
 
-        return true;
+    pub fn with_capacity(v: usize, e: usize, undirected: bool) -> Graph<V, E> {
+        Graph::<V, E> {
+            nodes: (0..v).map(|_| V::default()).collect(),
+            edges: Vec::with_capacity(e),
+            adj_list: vec![Vec::new(); v],
+            undirected
+        }
+    }
+
+    pub fn push_directed_edge(&mut self, from: usize, edge: E) {
+        let id = self.edges.len();
+        self.edges.push(edge);
+        self.adj_list[from].push(id);
+    }
+
+    pub fn push_undirected_edge(&mut self, edge: E)
+    where E: BidirectionalEdge {
+        let id = self.edges.len();
+        let (a, b) = edge.as_pair();
+
+        self.edges.push(edge);
+        self.adj_list[a].push(id);
+        self.adj_list[b].push(id);
+    }
+
+    pub fn v(&self) -> usize { self.nodes.len() }
+    pub fn e(&self) -> usize { self.edges.len() }
+}
+
+impl Edge for usize {
+    fn to(&self, _: usize) -> usize { *self }
+}
+
+impl Edge for (usize, usize) {
+    fn to(&self, from: usize) -> usize {
+        return self.0 ^ self.1 ^ from;
+    }
+}
+
+impl BidirectionalEdge for (usize, usize) {
+    fn as_pair(&self) -> (usize, usize) {
+        return *self;
     }
 }
 
