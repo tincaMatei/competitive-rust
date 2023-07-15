@@ -5,5 +5,6 @@ resolver = "2"
 members = [
   "dopecomp_io",
   "dopecomp_graph",
-  "dopecomp_euler"
+  "dopecomp_euler",
+  "dopecomp_fenwick"
 ]
