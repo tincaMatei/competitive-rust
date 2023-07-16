@@ -1,4 +1,29 @@
 /// General Fenwick Tree struct that can be customized easily.
+///
+/// A Fenwick Tree, or Binary Index Tree (BIT), or, in Romanian, "Arbore Indexat Binar" (AIB) is a
+/// data structure that support updates and queries on prefixes. In particular, the following two
+/// operations:
+///
+/// * `v[i] += val`
+/// * Returns `s[i]` such that `s[i] = v[1] + v[2] + v[3] + ... + v[i]`.
+///
+/// This can be used to update an array and quickly find the sum of prefixes, implicitly the sum of
+/// ranges in the array in O(logN) time.
+///
+/// The way that it works is that it stores an additional array `BIT[i] = v[l] + v[l + 1] + ... +
+/// v[i]`. Here, `l` is defined as `i - 2^k + 1`, where 2^k is the least significant bit of `i`.
+///
+/// In particular, if `i` is 6, then `BIT[6]` will store the sum of the last two elements in the
+/// array (here, by last element, I mean the last two elements if we were to trim the array `v` to
+/// have the length 6).
+///
+/// One thing to note is that everything in here is 1-indexed. When using [[FenwickTree<T>::from_data]], 
+/// you should make sure that the vectors have length (1 + n) instead of n.
+///
+/// ## Panics
+///
+/// Every operation will panic when accessed out of bounds (including 0). Also panics if the given
+/// operations as parameters panic themselves.
 pub struct FenwickTree<T> {
     pub data: Vec<T>,
 }
@@ -130,6 +155,48 @@ where T: Copy + Default + Add<Output = T> + Sub<Output = T> {
     }
 }
 
+impl<T> FenwickTree<FenwickTree<T>> {
+    /// Update a 2d Fenwick Tree at the coordinates (x, y).
+    pub fn update_2d<F>(&mut self, x: usize, y: usize, update: F)
+    where F: Fn(&mut T) {
+        self.update(x, |inner| {
+            inner.update(y, &update);
+        });
+    }
+
+    /// Query the sum of the rectangle `(1, 1)` to `(x, y)`.
+    pub fn query_2d<Q, F>(&self, x: usize, y: usize, neutral: Q, composition: F) -> Q
+    where F: Fn(Q, &T) -> Q,
+          Q: Copy {
+        
+        self.query(x, neutral, |sum, inner| {
+            inner.query(y, sum, &composition)
+        })
+    }
+} 
+
+impl<T> FenwickTree<FenwickTree<T>>
+where T: Copy + Default + Add<Output = T> + Sub<Output = T> {
+    /// Add a constant at the given coordinates.
+    pub fn add_value_2d(&mut self, x: usize, y: usize, val: T) {
+        self.update_2d(x, y, |e| { *e = *e + val } );
+    }
+
+    /// Compute the sum from `(1, 1)` to `(x, y)`
+    pub fn prefix_rectangle_sum(&mut self, x: usize, y: usize) -> T {
+        self.query_2d(x, y, T::default(), |s, e| { s + *e } )
+    }
+
+    /// Returns the sum of the rectangle with the top-left corner in `(x1, y1)` and the bottom-right
+    /// corner in `(x2, y2)`
+    pub fn rectangle_sum(&mut self, x1: usize, y1: usize, x2: usize, y2: usize) -> T {
+        self.prefix_rectangle_sum(x2, y2) - 
+            self.prefix_rectangle_sum(x1 - 1, y2) -
+            self.prefix_rectangle_sum(x2, y1 - 1) +
+            self.prefix_rectangle_sum(x1 - 1, y1 - 1)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -226,5 +293,25 @@ mod tests {
         assert_eq!((0, 1), ft.bin_search_sum(|val| { val <= -1 } ));
         assert_eq!((10, 11), ft.bin_search_sum(|val| { val <= 26 } ));
         assert_eq!((7, 8), ft.bin_search_sum(|val| { val <= 16 } ));
+    }
+
+    #[test]
+    fn test_2d_fenwick_tree() {
+        let mut ft = FenwickTree::<FenwickTree<i32>>::from_data(
+            (0..=5).map(|_| { FenwickTree::<i32>::new(5) }).collect()
+        );
+
+        ft.add_value_2d(2, 3, 5);
+        ft.add_value_2d(3, 1, 4);
+        ft.add_value_2d(3, 4, 6);
+        ft.add_value_2d(4, 2, 2);
+        ft.add_value_2d(4, 5, 1);
+        ft.add_value_2d(5, 4, 3);
+
+        assert_eq!(4, ft.prefix_rectangle_sum(4, 1));
+        assert_eq!(5, ft.prefix_rectangle_sum(2, 3));
+        assert_eq!(9, ft.prefix_rectangle_sum(3, 3));
+        assert_eq!(6, ft.prefix_rectangle_sum(5, 2));
+        assert_eq!(18, ft.prefix_rectangle_sum(4, 5));
     }
 }
