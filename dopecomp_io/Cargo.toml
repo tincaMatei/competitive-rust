@@ -6,8 +6,8 @@ authors = ["Matei Tinca <tinca.matei02@gmail.com>"]
 
 keywords = ["competitive", "algorithms"]
 readme = "../README.md"
-license-file = "../LICENSE"
 repository = "https://github.com/tincaMatei/competitive-rust"
+license = "MIT OR Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
